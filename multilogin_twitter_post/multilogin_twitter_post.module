@@ -1,0 +1,262 @@
+<?php
+// fork of  twitter_post.module,v 1.1.2.1 2010/01/25 05:09:05 walkah
+// changes: oauth support, multilogin module support, functions from twitter.module needed but not presented in  twitter_post.module
+
+/**
+ * @file
+ * Main hooks for twitter post module
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function multilogin_twitter_post_menu() {
+  $items['admin/settings/multilogin_twitter_post'] = array(
+    'title' => t('Multilogin Twitter post settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('multilogin_twitter_post_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'multilogin_twitter_post.pages.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function multilogin_twitter_post_form_alter(&$form, $form_state, $form_id) {
+  // Alter any node forms.
+  if (isset($form['#node']) && $form['#node']->type .'_node_form' == $form_id) {
+    // If we haven't enabled Twitter posting on this node type, nothing to do
+    // here.
+    $type = $form['#node']->type;
+    $allowed_types = variable_get('multilogin_twitter_post_types', array('story' => 'story', 'blog' => 'blog'));
+    if (empty($allowed_types[$type])) {
+      return;
+    }
+
+   // module_load_include('inc', 'twitter');
+
+    $twitter_form = multilogin_twitter_post_form();
+    if (!$twitter_form) {
+      return;
+    }
+    $form['twitter'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Post to twitter.com'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#tree' => TRUE,
+    );
+    $form['twitter']['post'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Announce this post on Twitter'),
+      '#default_value' => false, //(empty($form['nid']['#value'])),
+      '#id' => 'twitter-toggle',
+    );
+    $form['twitter'] += $twitter_form;
+    $form['twitter']['status']['#default_value'] = variable_get('multilogin_twitter_post_default_format', 'New post: !title !tinyurl');
+    $form['twitter']['status']['#description'] = t('The given text will be posted to twitter.com. You can use !url, !url-alias, !tinyurl, !title and !user as replacement text.');
+  }
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ *
+ * Intercepts newly published nodes and posts noticed to Twitter.
+ */
+function multilogin_twitter_post_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+
+  switch ($op) {
+    case 'insert':
+    case 'update':
+      if (!empty($node->status) && !empty($node->twitter) && !empty($node->twitter['post'])) {
+       // module_load_include('inc', 'twitter');
+
+        $twitter_account = multilogin_twitter_post_account_load($node->uid);
+
+
+        $replacements = array('!title' => $node->title,
+                              '!url' => url('node/'. $node->nid, array('absolute' => TRUE, 'alias' => TRUE)),
+                              '!url-alias' => url('node/'. $node->nid, array('absolute' => TRUE)),
+                              '!user' => $node->name);
+        // Only generate the shortened URL if it's going to be used. No sense
+        // burning through TinyURLs without a good reason.
+        if (strstr($node->twitter['status'], '!tinyurl') !== FALSE) {
+          $replacements['!tinyurl'] = multilogin_twitter_post_twitter_shorten_url(url('node/'. $node->nid, array('absolute' => TRUE)));
+        }
+
+        $status = strtr($node->twitter['status'], $replacements);
+       // dsm($status);
+      //  dsm($twitter_account);
+
+         $result = multilogin_twitter_post_set_status($twitter_account, $status);
+        //  dsm($result);
+         if(isset($result->error))
+         {    drupal_set_message(t('An error occurred when posting to twitter: %code %error',
+                               array('%code' => $result->code, '%error' => $result->error)), 'error');
+         }
+         else
+         {
+           drupal_set_message(t('Successfully posted to Twitter'));
+         }
+      }
+      break;
+  }
+}
+
+
+/**
+ * Generate a twitter posting form for the given user.
+ *
+ * @param $account
+ *   A Drupal user object.
+ */
+function multilogin_twitter_post_form($account = NULL) {
+ // drupal_add_js(drupal_get_path('module', 'twitter') .'/twitter.js', 'module');
+
+  if (empty($account)) {
+    global $user;
+    $account = $user;
+  }
+
+  $twitter_accounts = multilogin_twitter_post_get_user_accounts($account->uid);
+  $options = array();
+   if(count($twitter_accounts))
+   {
+  foreach ($twitter_accounts as $twitter_account) {
+    $options[$twitter_account->id] = $twitter_account->screen_name;
+  }
+  }
+//dsm(var_export($options,1));
+
+  if (count($options)>0) {
+    $form = array();
+    $form['status'] = array(
+      '#type' => 'textfield',
+      '#id' => 'twitter-textfield',
+    );
+
+    if (count($options) > 1) {
+      $form['account'] = array(
+        '#type' => 'select',
+        '#title' => t('Account'),
+        '#options' => $options,
+        '#id' => 'twitter-account',
+      );
+    }
+    else {
+      $form['account'] = array(
+        '#type' => 'value',
+        '#value' => array_pop(array_keys($options))
+      );
+    }
+    return $form;
+  }
+}
+
+/**
+* currently just loads user`s twiier account. see multilogin_twitter_post_get_user_accounts()
+*/
+function multilogin_twitter_post_account_load($acc)
+{
+    if(!is_object($acc))
+    {$acc = user_load(array('uid' => $acc));
+    }
+
+    if(!isset($acc->multilogin['twitter']['id']))
+    {   drupal_set_message('Can`t load twitter account.', 'notice');
+    	return;
+    }
+
+	$values = array();
+	$values = $acc->multilogin['twitter'];
+       //  dsm($values);
+	if(!class_exists('TwitterUser'))
+	{
+		  $twitter_inc = libraries_get_path('twitter.lib.php');
+
+		  if (!file_exists($twitter_inc)) {
+		    drupal_set_message('Error loading  twitter library.', 'error');
+		    return;
+		  }
+
+		  include_once($twitter_inc);
+	}
+
+	$account = new TwitterUser($values);
+	$account->set_auth($values);
+	$auth = $account->get_auth();
+
+	$account->uid =  $acc->uid;
+	$account->import = 0;
+	$account->is_global = 0;
+
+	return $account;
+ }
+
+
+/**
+* Post a message to twitter
+*/
+function multilogin_twitter_post_set_status($twitter_account, $status) {
+	//module_load_include('lib.php', 'twitter');
+	module_load_include('lib.php', 'oauth');
+
+	if(!class_exists('TwitterUser'))
+	{
+		  $twitter_inc = libraries_get_path('twitter.lib.php');
+
+		  if (!file_exists($twitter_inc)) {
+		    drupal_set_message('Error loading  twitter library.', 'error');
+		    return;
+		  }
+
+		  include_once($twitter_inc);
+	}
+
+	$multilogin_config = variable_get('multilogin', array());
+	$auth = $twitter_account->get_auth();
+
+	$twitter =  new TwitterOAuth($multilogin_config['twitter']['twitter_consumer_key'], $multilogin_config['twitter']['twitter_consumer_secret'],$auth['oauth_token'], $auth['oauth_token_secret']);
+	// dsm($twitter);
+	$res = $twitter->status_update($status);
+	//  dsm($res);
+	return $res;
+}
+
+/**
+* currently just loads user`s twiier account. TODO: global twitter account
+*/
+function multilogin_twitter_post_get_user_accounts($uid) {
+	$user = user_load($uid);
+	$twitter_accounts = array();
+	$acc =  multilogin_twitter_post_account_load($user);
+	if(isset($acc))
+	{
+		$twitter_accounts[] =  $acc;
+	}
+
+	return $twitter_accounts;
+}
+
+/**
+*  copied from twitter.module
+*/
+function multilogin_twitter_post_twitter_shorten_url($url) {
+  if (module_exists('shorten')) {
+    return shorten_url($url);
+  }
+  else {
+    $response = drupal_http_request("http://tinyurl.com/api-create.php?url=" . $url);
+    if ($response->code == 200) {
+      return $response->data;
+    }
+    else {
+      return $url;
+    }
+  }
+}
+
+

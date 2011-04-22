@@ -1,0 +1,8 @@
+; $Id: twitter_post.info,v 1.1.2.2 2010/10/20 16:37:30 walkah Exp $ tweaked
+name = Multilogin Twitter Post
+description = Enables posting to twitter
+core = 6.x
+package = Multilogin
+dependencies[] = multilogin
+dependencies[] = oauth
+
