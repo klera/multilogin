@@ -1,0 +1,45 @@
+<?php
+
+function multilogin_requirements($phase) {
+  $requirements = array();
+  $t = get_t();
+
+  if (!function_exists('curl_init')) {
+    $requirements['curl']['title'] = $t('cURL library');
+    $requirements['curl']['value'] = $t('Not installed');
+    $requirements['curl']['severity'] = REQUIREMENT_ERROR;
+    $requirements['curl']['description'] = $t('The cURL library is not installed. Please check the <a href="@url">PHP cURL documentation</a> for information on how to correct this.', array('@url' => 'http://www.php.net/manual/en/curl.setup.php'));
+  }
+
+  if (!function_exists('json_decode')) {
+    $requirements['json']['title'] = $t('JSON extension');
+    $requirements['json']['value'] = $t('Not installed');
+    $requirements['json']['severity'] = REQUIREMENT_ERROR;
+    $requirements['json']['description'] = $t('The JSON library is not installed. Facebook needs the JSON PHP extension');
+  }
+
+  if ($phase == 'runtime') {
+    // TODO: add check for libraries, required for enabled plugins
+
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function multilogin_install() {
+  $schema = array('users' => drupal_get_schema('users'));
+  $schema['users']['fields']['mail']['length'] = 255; // take care about facebook proxy email
+  //drupal_install_schema('multilogin'); // TODO: save multilogin separated from user data
+  db_query("UPDATE {system} SET weight = 88 WHERE name = 'multilogin'");
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function multilogin_uninstall() {
+
+}
+

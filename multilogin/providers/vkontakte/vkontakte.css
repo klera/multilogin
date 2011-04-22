@@ -1,0 +1,15 @@
+#login_button {
+	margin-bottom: 0.5em;
+}
+#login_button table {
+	width: auto;
+}
+#login_button tbody {
+	border: none;
+}
+#login_button td {
+	padding: 0;
+}
+#login_button div {
+	line-height: 1.3em;
+}

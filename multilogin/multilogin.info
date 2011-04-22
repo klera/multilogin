@@ -1,0 +1,5 @@
+; $Id$
+name = Multilogin
+description = Multi auth providers in one module
+core = 6.x
+dependencies[] = libraries

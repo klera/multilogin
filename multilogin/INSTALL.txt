@@ -1,0 +1,25 @@
+INSTALLATION
+==============
+* install and enable Libraries API module  <http://drupal.org/project/libraries>
+* if uou want to use Twitter plugin, install and enable OAuth module  <http://drupal.org/project/oauth>
+* copy libraries files  to  sites/all/libraries (you should have paths like sites/all/libraries/facebook.php)
+    Facebook plugin needs 	facebook.php,
+    Twitter plugin needs 		twitter.lib
+    Vkontakte plugin needs 	vkapi.class.php,
+*  add atribute to <html> tag  xmlns:fb="http://www.facebook.com/2008/fbml" in page.tpl.php
+* enable Multilogin module as usual
+* edit plugins settings at admin/settings/multilogin
+
+SETTINGS
+==============
+Each plugin has it`s own instructions  at admin/settings/multilogin
+General settings are:
+* Fast registration mode
+	when user is going to register via social network it can be done two ways
+	- first, usual, as openid module does - user is being registered only if external system provides enough information - usually it`s email adress and login. If there are not email or login presented, user is being redirected to registration form/
+	- Fast registration mode - user is being registered using external authentication anyway. If external system provides not enough information, some registration form fields left blank.
+	You can implement hook_multilogin_create_user() (see README.txt) to manage how user info is managed.
+* Role for users without email
+	if user is registered in   Fast registration mode, their email can be not presented. To filter such users you can add them a role
+
+
