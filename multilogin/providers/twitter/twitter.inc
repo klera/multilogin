@@ -60,7 +60,7 @@ function multilogin_twitter_login_form_alter(&$form, &$form_state, $form_id) {
     }
 
     $img = drupal_get_path('module', 'multilogin') . '/providers/twitter/' . 'twitter.png';
-    $form['twitter_button'] = array("#type" => "markup", "#value" => l(theme('image', $img, t('Sign in with Twitter')), 'multilogin/authenticate/twitter/redirect', array('html' => TRUE, 'query' => user_login_destination())));
+    $form['twitter_button'] = array("#type" => "markup", "#value" => l(theme('image', $img, t('Sign in with Twitter')), 'multilogin/authenticate/twitter/redirect', array('html' => TRUE )));
 		//  _multilogin_add_css('twitter');
   }
   else {
