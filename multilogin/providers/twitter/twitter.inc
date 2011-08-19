@@ -284,13 +284,13 @@ function multilogin_twitter_get_userpic( $account) {
 }
 
 function  multilogin_twitter_settings_form(&$form, $form_state, $multilogin_config, $prefix) {
-	$oauth = (module_exists('oauth') or module_exists('oauth_common') );
-	if($oauth){
+	if(module_exists('oauth')){
 	  $form['twitter'] = array(
 	    '#type' => 'fieldset',
 	    '#title' => t('Twitter'),
 	    '#tree' => TRUE,
 	    '#parents' => array($prefix, 'twitter'),
+	   // '#access' => module_exists('oauth'),
 	    '#description' => t('To enable OAuth based access for twitter, you have to <a href="@url">register your application</a> with twitter and add the provided keys here.', array('@url' => 'https://twitter.com/apps/new')),
 	  );
 	  $form['twitter']['enabled'] = array(
@@ -317,7 +317,7 @@ function  multilogin_twitter_settings_form(&$form, $form_state, $multilogin_conf
 	else{
 	  $form[]  = array(
 	    '#type' => 'markup',
-	    '#value' => t('<p>To enable twitter you need <a target="_blank" href="http://drupal.org/project/oauth">oAuth</a> module</p>'),  // todo: disable form if no oAuth
+	    '#value' => t('<p>To enable twitter you need <a target="_blank" href="http://drupal.org/project/oauth">oAuth</a> module 2.x</p>'),  // todo: disable form if no oAuth
 	  );
 	}
 }
