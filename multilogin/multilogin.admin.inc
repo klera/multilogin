@@ -2,7 +2,7 @@
 /**
  *  settings form.
  */
-function multilogin_settings_form() { // TODO: put settings of each provider to its plugin
+function multilogin_settings_form() {
   $prefix = 'multilogin';
   $multilogin_config = variable_get($prefix, array());
   //dsm($multilogin_config);
@@ -37,11 +37,12 @@ function multilogin_settings_form() { // TODO: put settings of each provider to 
         include "providers/$app_name/$app_name.inc";
        $function = "multilogin_{$app_name}_settings_form";
        if (function_exists($function)) {
-         call_user_func($function, &$form, $form_state, $multilogin_config, $prefix);
+         // call_user_func($function, $form, $form_state, $multilogin_config, $prefix);
+           $function( $form, $form_state, $multilogin_config, $prefix); //   dsm($form);
        }
      }
    }
-  // dsm($form);
+ //  dsm($form);
 
    return system_settings_form($form);
 }
