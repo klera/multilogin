@@ -58,12 +58,12 @@ function _multilogin_init() {
   if (!$multilogin) {
     $multilogin_config = variable_get('multilogin', array());
     foreach ($multilogin_config as $app_name => $config) {
-      if ($config['enabled']) {
-        include "providers/$app_name/$app_name.inc";
-        $function = "multilogin_{$app_name}_init";
-        if (function_exists($function)) {
-          call_user_func($function);
-        }
+    	if ($config['enabled'] === 1) {
+	        include "providers/$app_name/$app_name.inc";
+	        $function = "multilogin_{$app_name}_init";
+	        if (function_exists($function)) {
+	          call_user_func($function);
+	        }
       }
     }
   }
