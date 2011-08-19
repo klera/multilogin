@@ -284,36 +284,40 @@ function multilogin_twitter_get_userpic( $account) {
 }
 
 function  multilogin_twitter_settings_form(&$form, $form_state, $multilogin_config, $prefix) {
-  $form['twitter']['desc']  = array(
-    '#type' => 'markup',
-    '#value' => t('<p>To enable twitter you need oAuth module</p> '),  // todo: disable form if no oAuth
-  );
-  $form['twitter'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Twitter'),
-    '#tree' => TRUE,
-    '#parents' => array($prefix, 'twitter'),
-    '#access' => module_exists('oauth'),
-    '#description' => t('To enable OAuth based access for twitter, you have to <a href="@url">register your application</a> with twitter and add the provided keys here.', array('@url' => 'https://twitter.com/apps/new')),
-  );
-  $form['twitter']['enabled'] = array(
-    '#title' => t('enabled'),
-    '#type' => 'checkbox',
-    '#default_value' => $multilogin_config['twitter']['enabled'],
-  );
-  $form['twitter']['callback_url'] = array(
-    '#type' => 'item',
-    '#title' => t('Callback URL'),
-    '#value' =>  url('/multilogin/authenticate/twitter/in', array('absolute' => TRUE)),
-  );
-  $form['twitter']['twitter_consumer_key'] = array(
-    '#type' => 'textfield',
-    '#title' => t('OAuth Consumer key'),
-    '#default_value' => $multilogin_config['twitter']['twitter_consumer_key'],
-  );
-  $form['twitter']['twitter_consumer_secret'] = array(
-    '#type' => 'textfield',
-    '#title' => t('OAuth Consumer secret'),
-    '#default_value' => $multilogin_config['twitter']['twitter_consumer_secret'],
-  );
+	$oauth = (module_exists('oauth') or module_exists('oauth_common') );
+	if($oauth){
+	  $form['twitter'] = array(
+	    '#type' => 'fieldset',
+	    '#title' => t('Twitter'),
+	    '#tree' => TRUE,
+	    '#parents' => array($prefix, 'twitter'),
+	    '#description' => t('To enable OAuth based access for twitter, you have to <a href="@url">register your application</a> with twitter and add the provided keys here.', array('@url' => 'https://twitter.com/apps/new')),
+	  );
+	  $form['twitter']['enabled'] = array(
+	    '#title' => t('enabled'),
+	    '#type' => 'checkbox',
+	    '#default_value' => $multilogin_config['twitter']['enabled'],
+	  );
+	  $form['twitter']['callback_url'] = array(
+	    '#type' => 'item',
+	    '#title' => t('Callback URL'),
+	    '#value' =>  url('/multilogin/authenticate/twitter/in', array('absolute' => TRUE)),
+	  );
+	  $form['twitter']['twitter_consumer_key'] = array(
+	    '#type' => 'textfield',
+	    '#title' => t('OAuth Consumer key'),
+	    '#default_value' => $multilogin_config['twitter']['twitter_consumer_key'],
+	  );
+	  $form['twitter']['twitter_consumer_secret'] = array(
+	    '#type' => 'textfield',
+	    '#title' => t('OAuth Consumer secret'),
+	    '#default_value' => $multilogin_config['twitter']['twitter_consumer_secret'],
+	  );
+	}
+	else{
+	  $form[]  = array(
+	    '#type' => 'markup',
+	    '#value' => t('<p>To enable twitter you need <a target="_blank" href="http://drupal.org/project/oauth">oAuth</a> module</p>'),  // todo: disable form if no oAuth
+	  );
+	}
 }
